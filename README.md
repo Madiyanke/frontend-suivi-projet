@@ -74,12 +74,19 @@ Note : Assurez-vous que le Backend (Spring Boot) est lancé sur le port 8080 pou
 # Structure du Projet
 
 src/app/
+
 ├── auth/           # Page de connexion
+
 ├── core/           # Services API, Guards, Intercepteurs, Modèles
+
 ├── dashboard/      # Vue statistiques (Admin)
+
 ├── projets/        # Liste et Détails des projets
+
 ├── users/          # Gestion des étudiants/encadrants
+
 ├── shared/         # Composants partagés (Toast...)
+
 └── app.component   # Layout principal (Sidebar)
 
 
