@@ -1,0 +1,142 @@
+<div class="space-y-6 animate-fade-in max-w-5xl mx-auto">
+      
+      <button (click)="goBack()" class="flex items-center text-slate-500 hover:text-indigo-600 transition-colors font-medium mb-4">
+        ← Retour aux projets
+      </button>
+
+      @if (loading()) {
+        <div class="h-64 bg-slate-100 rounded-2xl animate-pulse"></div>
+      } 
+      @else if (projet()) {
+        
+        <!-- HEADER CARD -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm relative overflow-hidden">
+          <div class="absolute top-0 right-0 p-8 opacity-5 text-9xl font-bold select-none text-slate-900 -z-0 pointer-events-none">
+            {{ projet()?.id }}
+          </div>
+          
+          <div class="relative z-10">
+            <div class="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6">
+              <div>
+                <span [class]="'inline-block px-3 py-1 rounded-full text-xs font-bold tracking-wide mb-3 ' + getStatusClass(projet()!.etat)">
+                  {{ projet()?.etat?.replace('_', ' ') }}
+                </span>
+                <h1 class="text-3xl md:text-4xl font-extrabold text-slate-800">{{ projet()?.titre }}</h1>
+              </div>
+              
+              <div class="text-right">
+                <div class="text-sm font-bold text-slate-400 uppercase tracking-wider">Durée estimée</div>
+                <div class="text-xl font-mono text-slate-700">{{ projet()?.duree }} semaines</div>
+                <div class="text-xs text-slate-400">Début : {{ projet()?.dateDebut }}</div>
+              </div>
+            </div>
+
+            <p class="text-lg text-slate-600 leading-relaxed max-w-3xl">
+              {{ projet()?.description }}
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <!-- ENCADRANT CARD -->
+          <div class="bg-indigo-50 rounded-2xl p-6 border border-indigo-100">
+            <h3 class="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-4">Encadrant Responsable</h3>
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 bg-indigo-200 text-indigo-700 rounded-full flex items-center justify-center font-bold text-xl">
+                {{ projet()?.encadrant?.nom?.charAt(0) || '?' }}
+              </div>
+              <div>
+                <p class="font-bold text-indigo-900 text-lg">{{ projet()?.encadrant?.nom }} {{ projet()?.encadrant?.prenom }}</p>
+                <p class="text-sm text-indigo-600">{{ projet()?.encadrant?.specialite || 'Spécialité non spécifiée' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- TEAM CARD -->
+          <div class="md:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider">
+                Équipe Étudiante ({{ projet()?.etudiants?.length || 0 }})
+              </h3>
+              @if (isAdmin()) {
+                <button (click)="openAddStudentModal()" class="text-xs font-bold bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-600 px-3 py-1.5 rounded-lg transition-colors">
+                  + Ajouter un membre
+                </button>
+              }
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              @for (etu of projet()?.etudiants; track etu.id) {
+                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 group">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 bg-white border border-slate-200 text-slate-600 rounded-full flex items-center justify-center font-bold shrink-0">
+                      {{ etu.prenom.charAt(0) }}
+                    </div>
+                    <div class="min-w-0">
+                      <p class="font-bold text-slate-800 text-sm truncate">{{ etu.nom }} {{ etu.prenom }}</p>
+                      <p class="text-xs text-slate-500 truncate">{{ etu.filiere || 'Étudiant' }}</p>
+                    </div>
+                  </div>
+                  
+                  <!-- BOUTON SUPPRESSION -->
+                  @if (isAdmin()) {
+                    <button (click)="removeStudent(etu.id!)" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded transition-all" title="Retirer du projet">
+                      ✕
+                    </button>
+                  }
+                </div>
+              } @empty {
+                <div class="col-span-full py-6 text-center text-slate-400 italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  Aucun étudiant assigné pour le moment.
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+      } @else {
+        <div class="text-center py-20 text-slate-500">Projet introuvable.</div>
+      }
+
+      <!-- MODAL ADD STUDENT -->
+      @if (showModal()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up">
+            <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center text-white">
+              <h3 class="font-bold text-lg">Affecter un étudiant</h3>
+              <button (click)="closeModal()" class="hover:bg-indigo-500 rounded p-1">✕</button>
+            </div>
+            
+            <div class="p-6">
+              <p class="text-sm text-slate-500 mb-4">Sélectionnez un étudiant à ajouter au projet <strong>{{ projet()?.titre }}</strong>.</p>
+              
+              <div class="space-y-4 max-h-60 overflow-y-auto mb-6 pr-2">
+                @for (etu of availableStudents(); track etu.id) {
+                  <button (click)="assignStudent(etu.id!)" 
+                    class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all text-left group">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold group-hover:bg-indigo-200 group-hover:text-indigo-700">
+                        {{ etu.prenom.charAt(0) }}
+                      </div>
+                      <div>
+                        <p class="font-bold text-slate-800 text-sm">{{ etu.nom }} {{ etu.prenom }}</p>
+                        <p class="text-xs text-slate-500">{{ etu.filiere }}</p>
+                      </div>
+                    </div>
+                    <span class="text-indigo-600 opacity-0 group-hover:opacity-100 font-bold text-lg">+</span>
+                  </button>
+                } @empty {
+                  <p class="text-center text-sm text-slate-400">Tous les étudiants sont déjà assignés ou liste vide.</p>
+                }
+              </div>
+
+              <div class="flex justify-end">
+                <button (click)="closeModal()" class="text-slate-500 text-sm hover:underline">Fermer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+    </div>

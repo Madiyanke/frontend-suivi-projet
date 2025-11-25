@@ -1,0 +1,146 @@
+<div class="space-y-8 animate-fade-in">
+      
+      <!-- WELCOME HEADER -->
+      <div class="flex justify-between items-end">
+        <div>
+          <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Tableau de Bord</h1>
+          <p class="text-slate-500 mt-2 text-lg">
+            Ravi de vous revoir, <span class="font-semibold text-indigo-600">{{ authService.currentUser()?.prenom }}</span> 👋
+          </p>
+        </div>
+        <div class="hidden md:block text-right">
+          <p class="text-sm font-bold text-slate-400 uppercase tracking-wider">Date du jour</p>
+          <p class="text-xl font-mono text-slate-700">{{ today | date:'dd MMMM yyyy' }}</p>
+        </div>
+      </div>
+
+      <!-- LOADING STATE -->
+      @if (loading()) {
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 animate-pulse">
+          @for (i of [1,2,3,4]; track i) {
+            <div class="h-32 bg-slate-200 rounded-2xl"></div>
+          }
+        </div>
+      } 
+      @else {
+        <!-- STATS CARDS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          
+          <!-- Card 1: Total Projets -->
+          <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110">
+              <span class="text-6xl">📂</span>
+            </div>
+            <p class="text-sm font-bold text-slate-400 uppercase tracking-wider">Total Projets</p>
+            <h3 class="text-4xl font-extrabold text-slate-800 mt-2">{{ stats().total }}</h3>
+            <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
+              <span class="text-emerald-500 font-bold">●</span> Actifs dans la base
+            </p>
+          </div>
+
+          <!-- Card 2: En Cours -->
+          <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110">
+              <span class="text-6xl text-blue-600">⚡</span>
+            </div>
+            <p class="text-sm font-bold text-blue-400 uppercase tracking-wider">En Cours</p>
+            <h3 class="text-4xl font-extrabold text-blue-600 mt-2">{{ stats().enCours }}</h3>
+            <div class="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div class="bg-blue-500 h-full rounded-full" [style.width.%]="(stats().enCours / stats().total) * 100"></div>
+            </div>
+          </div>
+
+          <!-- Card 3: Terminés -->
+          <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110">
+              <span class="text-6xl text-emerald-600">✅</span>
+            </div>
+            <p class="text-sm font-bold text-emerald-400 uppercase tracking-wider">Terminés</p>
+            <h3 class="text-4xl font-extrabold text-emerald-600 mt-2">{{ stats().termines }}</h3>
+            <p class="text-xs text-slate-500 mt-2">
+              Projets archivés avec succès
+            </p>
+          </div>
+
+          <!-- Card 4: Étudiants -->
+          <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+            <div class="absolute right-0 top-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110">
+              <span class="text-6xl text-purple-600">🎓</span>
+            </div>
+            <p class="text-sm font-bold text-purple-400 uppercase tracking-wider">Étudiants</p>
+            <h3 class="text-4xl font-extrabold text-purple-600 mt-2">{{ stats().etudiants }}</h3>
+            <p class="text-xs text-slate-500 mt-2">
+              Assignés sur des projets
+            </p>
+          </div>
+        </div>
+
+        <!-- RECENT ACTIVITY SECTION -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          <!-- LEFT: Recent Projects List -->
+          <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="text-lg font-bold text-slate-800">Projets Récents</h3>
+              <a routerLink="/projets" class="text-sm font-bold text-indigo-600 hover:text-indigo-700 hover:underline">Tout voir →</a>
+            </div>
+            
+            <div class="space-y-4">
+              @for (projet of recentProjets(); track projet.id) {
+                <div class="flex items-center p-4 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200 group">
+                  <div class="w-12 h-12 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg mr-4 group-hover:scale-110 transition-transform">
+                    {{ projet.titre.charAt(0) }}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="font-bold text-slate-800 truncate">{{ projet.titre }}</h4>
+                    <p class="text-sm text-slate-500 truncate">{{ projet.description }}</p>
+                  </div>
+                  <div class="text-right pl-4">
+                    <span [class]="'px-2 py-1 rounded text-xs font-bold ' + getStatusClass(projet.etat)">
+                      {{ projet.etat }}
+                    </span>
+                    <p class="text-xs text-slate-400 mt-1">{{ projet.duree }} sem.</p>
+                  </div>
+                </div>
+              } @empty {
+                <div class="text-center py-10 text-slate-400 italic">
+                  Aucun projet récent.
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- RIGHT: Quick Actions & Info -->
+          <div class="space-y-6">
+            <!-- Action Card -->
+            <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200">
+              <h3 class="font-bold text-lg mb-2">Action Rapide</h3>
+              <p class="text-indigo-100 text-sm mb-6">Vous avez une nouvelle idée de projet ? Créez-la maintenant.</p>
+              @if(authService.currentUser()?.role === 'ADMIN') {
+                 <button  class="w-full bg-white text-indigo-600 font-bold py-3 rounded-xl hover:bg-indigo-50 transition-colors shadow-sm">
+                  + Nouveau Projet
+                </button>
+              } @else {
+                 <div class="text-xs bg-white/10 p-2 rounded text-center">Réservé aux Admins</div>
+              }
+            </div>
+
+            <!-- Mini List -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+              <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Vos outils</h3>
+              <ul class="space-y-3 text-sm font-medium text-slate-600">
+                <li class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
+                  <span class="bg-orange-100 text-orange-600 p-1.5 rounded">📊</span> Rapports PDF
+                </li>
+                <li class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
+                  <span class="bg-blue-100 text-blue-600 p-1.5 rounded">📅</span> Calendrier
+                </li>
+                <li class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
+                  <span class="bg-pink-100 text-pink-600 p-1.5 rounded">⚙️</span> Paramètres
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      }
+    </div>

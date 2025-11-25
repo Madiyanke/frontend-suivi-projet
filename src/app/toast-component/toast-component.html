@@ -1,0 +1,12 @@
+<div class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+      @for (toast of toastService.toasts(); track toast.id) {
+        <div class="pointer-events-auto transform transition-all duration-300 animate-slide-in"
+             [ngClass]="getClasses(toast.type)">
+          <div class="flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border">
+            <span class="text-xl">{{ getIcon(toast.type) }}</span>
+            <p class="font-medium text-sm">{{ toast.message }}</p>
+            <button (click)="toastService.remove(toast.id)" class="ml-4 opacity-50 hover:opacity-100">✕</button>
+          </div>
+        </div>
+      }
+    </div>

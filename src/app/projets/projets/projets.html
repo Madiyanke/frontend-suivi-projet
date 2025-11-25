@@ -1,0 +1,214 @@
+<div class="space-y-6 animate-fade-in">
+
+      <!-- HEADER & CONTROLS -->
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <!-- TITRE DYNAMIQUE ICI -->
+          <h2 class="text-3xl font-bold text-slate-800 tracking-tight">
+            {{ isAdmin() ? 'Tous les Projets' : 'Mes Projets' }}
+          </h2>
+          <p class="text-slate-500">
+            @if(isAdmin()) {
+              Administration globale des projets
+            } @else if (isEncadrant()) {
+              Espace de supervision
+            } @else {
+              Vos projets académiques
+            }
+          </p>
+        </div>
+        
+        <div class="flex gap-3">
+          <!-- Les filtres ne sont visibles QUE pour l'Admin -->
+          @if (isAdmin()) {
+            <button (click)="filterMode.set('MINE')" 
+              [class]="'px-4 py-2 rounded-lg font-medium transition-colors ' + 
+              (filterMode() === 'MINE' ? 'bg-indigo-100 text-indigo-700' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50')">
+              👤 Mes Projets
+            </button>
+            
+            <button (click)="filterMode.set('ALL')" 
+              [class]="'px-4 py-2 rounded-lg font-medium transition-colors ' + 
+              (filterMode() === 'ALL' ? 'bg-indigo-100 text-indigo-700' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50')">
+              Tous
+            </button>
+
+            <button (click)="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg shadow-md transition-all flex items-center gap-2 font-bold ml-2">
+              <span>+</span> Nouveau
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- GRID LIST -->
+      @if (loading()) {
+        <div class="flex justify-center py-20">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        </div>
+      } 
+      @else {
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          @for (projet of displayedProjets(); track projet.id) {
+            <!-- Carte Projet -->
+            <div [routerLink]="['/projets', projet.id]" 
+                 class="group bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-xl hover:border-indigo-100 transition-all duration-300 relative cursor-pointer">
+              
+              <div class="absolute top-4 right-4">
+                <span [class]="'px-3 py-1 rounded-full text-xs font-bold tracking-wide ' + getStatusClass(projet.etat)">
+                  {{ projet.etat.replace('_', ' ') }}
+                </span>
+              </div>
+
+              <div class="pr-12">
+                <h3 class="text-xl font-bold text-slate-800 mb-2 group-hover:text-indigo-600 transition-colors line-clamp-1" title="{{projet.titre}}">
+                  {{ projet.titre }}
+                </h3>
+                <p class="text-slate-500 text-sm line-clamp-3 mb-6 h-[4.5em]">
+                  {{ projet.description }}
+                </p>
+              </div>
+
+              <div class="space-y-3 border-t border-slate-100 pt-4">
+                <div class="flex items-center gap-2 text-sm">
+                  <span class="text-slate-400 font-bold uppercase text-xs w-20">Début</span>
+                  <span class="font-medium text-slate-700">{{ projet.dateDebut }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                  <span class="text-slate-400 font-bold uppercase text-xs w-20">Durée</span>
+                  <span class="font-medium text-slate-700">{{ projet.duree }} semaines</span>
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                  <span class="text-slate-400 font-bold uppercase text-xs w-20">Encadrant</span>
+                  <span class="font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                    {{ projet.encadrant?.nom || 'Non assigné' }}
+                  </span>
+                </div>
+              </div>
+              
+              <div class="mt-4 flex items-center justify-between">
+                <div class="flex -space-x-2 overflow-hidden">
+                  @for (etu of projet.etudiants; track etu.id) {
+                    <div class="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600"
+                         [title]="etu.prenom + ' ' + etu.nom">
+                      {{ etu.prenom.charAt(0) }}
+                    </div>
+                  }
+                  @if (!projet.etudiants?.length) {
+                    <span class="text-xs text-slate-400 italic pl-1">0 étudiants</span>
+                  }
+                </div>
+                
+                <div class="flex gap-2">
+                  <!-- Bouton Modifier : Visible pour Admin OU Encadrant du projet -->
+                  @if (canEdit(projet)) {
+                    <button (click)="$event.stopPropagation(); openEditModal(projet)" 
+                            class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+                            title="Modifier" >
+                      Modifier
+                    </button>
+                  }
+                  
+                  <!-- Bouton Supprimer : Admin uniquement -->
+                  @if (isAdmin()) {
+                    <button (click)="$event.stopPropagation(); deleteProjet(projet)" 
+                            class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                            title="Supprimer">
+                      Supprimer
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          } @empty {
+            <div class="col-span-full py-20 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+              <p class="text-slate-500 text-lg font-medium">
+                {{ isAdmin() ? 'Aucun projet trouvé.' : 'Aucun projet ne vous est assigné pour le moment.' }}
+              </p>
+              @if(isAdmin()) {
+                <button (click)="filterMode.set('ALL')" class="text-indigo-600 hover:underline mt-2">Voir tous les projets</button>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- MODAL CREATION / EDITION -->
+      @if (showModal()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] animate-slide-up">
+            
+            <div class="bg-indigo-600 px-8 py-5 flex justify-between items-center text-white shrink-0 rounded-t-2xl">
+              <h3 class="font-bold text-xl">{{ isEditMode() ? 'Modifier le Projet' : 'Nouveau Projet' }}</h3>
+              <button (click)="closeModal()" class="hover:bg-indigo-500 rounded p-1 transition-colors">✕</button>
+            </div>
+            
+            <div class="overflow-y-auto flex-1 p-8">
+              <form id="projectForm" (submit)="onSubmit()" class="space-y-6">
+                <!-- (Le contenu du formulaire reste identique à l'étape précédente) -->
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-500 uppercase">Titre du projet</label>
+                  <input type="text" [(ngModel)]="formData.titre" name="titre" required [disabled]="!canEditFields()"
+                    class="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none font-medium disabled:bg-slate-100 disabled:text-slate-500"
+                    placeholder="Ex: Développement IA...">
+                </div>
+
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-500 uppercase">Description</label>
+                  <textarea [(ngModel)]="formData.description" name="description" required rows="3" [disabled]="!canEditFields()"
+                    class="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-slate-100"
+                    placeholder="Objectifs et technologies..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                  <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Date de début</label>
+                    <input type="date" [(ngModel)]="formData.dateDebut" name="dateDebut" required
+                      class="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none">
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Durée (semaines)</label>
+                    <input type="number" [(ngModel)]="formData.duree" name="duree" required min="1"
+                      class="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none">
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-slate-500 uppercase">Encadrant Responsable</label>
+                  <select [(ngModel)]="selectedEncadrantId" name="encadrant" required [disabled]="!isAdmin()"
+                    class="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-white disabled:bg-slate-100">
+                    <option [ngValue]="null" disabled>Choisir un encadrant...</option>
+                    @for (enc of availableEncadrants(); track enc.id) {
+                      <option [value]="enc.id">{{ enc.nom }} {{ enc.prenom }} ({{ enc.specialite }})</option>
+                    }
+                  </select>
+                </div>
+                
+                @if(isEditMode()) {
+                   <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase">État</label>
+                    <select [(ngModel)]="formData.etat" name="etat" required
+                      class="w-full border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                      <option value="EN_COURS">En cours</option>
+                      <option value="EN_ATTENTE">En attente</option>
+                      <option value="TERMINE">Terminé</option>
+                    </select>
+                  </div>
+                }
+              </form>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 rounded-b-2xl shrink-0">
+              <button type="button" (click)="closeModal()" class="px-5 py-2.5 text-slate-600 hover:bg-slate-200 rounded-lg font-medium transition-colors">
+                Annuler
+              </button>
+              <button type="submit" form="projectForm" [disabled]="submitting()" 
+                class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md flex items-center gap-2 disabled:opacity-70 transition-colors">
+                @if(submitting()) { <span class="animate-spin">⌛</span> }
+                {{ isEditMode() ? 'Enregistrer' : 'Créer le projet' }}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      }
+    </div>
