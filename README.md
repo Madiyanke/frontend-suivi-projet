@@ -62,7 +62,7 @@ npm install
 
 ### 3. Lancer le serveur de développement
 
-`bash
+`
 ng serve
 `
 
